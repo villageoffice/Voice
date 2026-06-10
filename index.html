@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <!-- Google ബ്ലോക്ക് ചെയ്യുന്നത് ഒഴിവാക്കാൻ താഴെയുള്ള വരി നിർബന്ധമാണ് -->
+    <meta name="referrer" content="no-referrer">
     <title>Malayalam Voice Generator | Free Download</title>
     <style>
         * {
@@ -227,7 +229,7 @@
 <div class="main-card">
     <div class="header">
         <h1>🎙️ നേറ്റീവ് മലയാളം <span>Voice Studio</span></h1>
-        <div class="badge">⚡ AI-Enhanced Audio • No API Key • Download MP3</div>
+        <div class="badge">⚡ AI-Enhanced Audio • Fixed for GitHub Pages</div>
     </div>
 
     <div class="content">
@@ -262,7 +264,7 @@
         </div>
 
         <div class="tech-note">
-            🔬 <strong>100% Working Engine:</strong> യാതൊരുവിധ എററുകളും ഇല്ലാതെ ശബ്ദം ഉണ്ടാക്കാനും നേരിട്ട് MP3 ആയി ഡൗൺലോഡ് ചെയ്യാനും സാധിക്കുന്ന സ്ഥിരതയുള്ള കോഡ്.
+            🔬 <strong>100% Working Engine:</strong> യാതൊരുവിധ എററുകളും ഇല്ലാതെ ശബ്ദം ഉണ്ടാക്കാനും പ്ലേ ചെയ്യാനും സാധിക്കുന്ന പുതിയ കോഡ്.
         </div>
     </div>
 </div>
@@ -339,25 +341,16 @@
         stopBtn.style.display = 'none';
     }
 
-    // MP3 ഡൗൺലോഡ് ചെയ്യാനുള്ള ഫങ്ഷൻ
+    // MP3 ഡൗൺലോഡ് ചെയ്യാനുള്ള ഫങ്ഷൻ (Updated for GitHub Pages CORS compatibility)
     function downloadVoice() {
         if (!currentAudioUrl) return;
         
-        statusDiv.innerText = "💾 ഡൗൺലോഡ് ആരംഭിക്കുന്നു...";
-        const link = document.createElement('a');
-        link.href = currentAudioUrl;
-        link.target = '_blank';
-        link.download = `Malayalam_Voice_${Date.now()}.mp3`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        statusDiv.innerText = "⚠️ പുതിയ ടാബിൽ ഓഡിയോ തുറക്കുന്നു. ഡൗൺലോഡ് ചെയ്യാൻ അവിടെയുള്ള 3 ഡോട്ട്സിൽ (⋮) ക്ലിക്ക് ചെയ്യുക.";
         
-        setTimeout(() => {
-            statusDiv.innerText = "✅ ഡൗൺലോഡ് പൂർത്തിയായി!";
-        }, 2000);
+        // ക്രോസ്-ഡൊമെയ്ൻ പ്രശ്നം ഒഴിവാക്കാൻ ഓഡിയോ പുതിയ ടാബിൽ തുറക്കുന്നു
+        window.open(currentAudioUrl, '_blank');
     }
 </script>
 
 </body>
 </html>
-
