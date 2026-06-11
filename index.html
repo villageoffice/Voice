@@ -243,4 +243,240 @@
             font-size: 0.7rem;
             background: #fdf0ed;
             padding: 8px 14px;
-            border-radius
+            border-radius: 28px;
+            margin-top: 20px;
+            color: #b44332;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-card">
+    <div class="header">
+        <h1>🎙️ നേറ്റീവ് മലയാളം <span>Voice Player</span></h1>
+        <div class="badge">⚡ സ്മാർട്ട് വോയിസ് എഞ്ചിൻ</div>
+        <div class="badge">🔄 MP3 ഡൗൺലോഡ് സപ്പോർട്ട്</div>
+    </div>
+
+    <div class="content">
+        <div class="text-area">
+            <div class="label-row">
+                <span>📝 മലയാളം വാചകം</span>
+                <span class="status-text" id="charCount">0 characters</span>
+            </div>
+            <textarea id="malayalamText" rows="4" placeholder="ഇവിടെ മലയാളത്തിൽ എഴുതുക... സ്വാഭാവിക ശബ്ദത്തിൽ കേൾക്കാം (കുറഞ്ഞത് 200 അക്ഷരങ്ങൾ മാത്രം ഒരുമിച്ചു നൽകുക)"></textarea>
+            <div class="examples">
+                <button type="button" class="example-btn" data-text="നമസ്കാരം, ഞാൻ ഒരു മലയാളം സ്വാഭാവിക വോയിസ് ആണ്. എനിക്ക് വ്യക്തമായി സംസാരിക്കാം.">✨ ഉദാഹരണം 1</button>
+                <button type="button" class="example-btn" data-text="കേരളത്തിന്റെ പ്രകൃതി ഭംഗിയും സംസ്കാരവും ലോകമറിയുന്നതാണ്. മലയാളം മധുരഭാഷ.">🌴 ഉദാഹരണം 2</button>
+                <button type="button" class="example-btn" data-text="സാങ്കേതികവിദ്യ ഉപയോഗിച്ച് ശബ്ദം കേൾക്കാം. വളരെ എളുപ്പം.">🎧 ഉദാഹരണം 3</button>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="panel-title" id="engineTitle">
+                🧠 AI Native Voice Engine
+            </div>
+            <div class="voice-row">
+                <div class="voice-group">
+                    <label>🗣️ വോയിസ് മോഡ്</label>
+                    <select id="voiceSelect"></select>
+                </div>
+                <div class="voice-group">
+                    <label>⚡ വേഗത (Rate)</label>
+                    <input type="range" id="rateSlider" min="0.5" max="2" step="0.05" value="1.0">
+                    <div class="value-hint" id="rateVal">1.00x</div>
+                </div>
+                <div class="voice-group">
+                    <label>🎵 പിച്ച് (Pitch)</label>
+                    <input type="range" id="pitchSlider" min="0.5" max="1.8" step="0.05" value="1.0">
+                    <div class="value-hint" id="pitchVal">1.0</div>
+                </div>
+            </div>
+
+            <div class="button-strip">
+                <button id="speakAndRecordBtn" class="btn btn-primary">🎤 സംസാരിക്കുക</button>
+                <button id="downloadBtn" class="btn btn-download">💾 MP3 ഡൗൺലോഡ്</button>
+                <button id="stopBtn" class="btn btn-stop">⏹️ നിർത്തുക</button>
+            </div>
+
+            <div class="recording-status">
+                <div id="statusMessage" class="status-text">പരിശോധിക്കുന്നു...</div>
+            </div>
+        </div>
+
+        <div class="tech-note" id="warningNote" style="display:none;">
+            ⚠️ നിങ്ങളുടെ ഡിവൈസിൽ സിസ്റ്റം മലയാളം വോയിസ് ലഭ്യമല്ല. അതിനാൽ ഓൺലൈൻ ക്ലൗഡ് ശബ്ദത്തിലേക്ക് തനിയെ മാറിയിട്ടുണ്ട്.
+        </div>
+    </div>
+</div>
+
+<audio id="audioPlayerFallback" style="display: none;"></audio>
+
+<script>
+    const textarea = document.getElementById('malayalamText');
+    const charCountSpan = document.getElementById('charCount');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const rateSlider = document.getElementById('rateSlider');
+    const pitchSlider = document.getElementById('pitchSlider');
+    const rateVal = document.getElementById('rateVal');
+    const pitchVal = document.getElementById('pitchVal');
+    const speakRecordBtn = document.getElementById('speakAndRecordBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const statusDiv = document.getElementById('statusMessage');
+    const warningNote = document.getElementById('warningNote');
+    const engineTitle = document.getElementById('engineTitle');
+    const fallbackPlayer = document.getElementById('audioPlayerFallback');
+
+    let synthesis = window.speechSynthesis;
+    let hasNativeMalayalam = false;
+
+    function updateCharCount() {
+        let len = textarea.value.length;
+        charCountSpan.innerText = `${len} chars`;
+        if (len > 200) charCountSpan.style.color = "#b44332";
+        else charCountSpan.style.color = "#2c6e8f";
+    }
+    textarea.addEventListener('input', updateCharCount);
+    updateCharCount();
+
+    document.querySelectorAll('.example-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            textarea.value = btn.getAttribute('data-text');
+            updateCharCount();
+            statusDiv.innerText = "📝 ഉദാഹരണം ലോഡ് ചെയ്തു. 'സംസാരിക്കുക' ക്ലിക്ക് ചെയ്യുക.";
+        });
+    });
+
+    function populateVoiceList() {
+        let voices = synthesis.getVoices();
+        voiceSelect.innerHTML = '';
+        
+        let mlVoices = voices.filter(v => v.lang.toLowerCase().includes('ml') || v.lang.toLowerCase().includes('malayalam'));
+        
+        if (mlVoices.length > 0) {
+            hasNativeMalayalam = true;
+            warningNote.style.display = 'none';
+            engineTitle.innerText = "🧠 AI Native Voice Engine · സിസ്റ്റം വോയിസ്";
+            
+            mlVoices.forEach(v => {
+                let option = document.createElement('option');
+                option.value = 'native_' + v.name;
+                option.textContent = `${v.name} (${v.lang}) 🎯`;
+                voiceSelect.appendChild(option);
+            });
+            let cloudOption = document.createElement('option');
+            cloudOption.value = 'online_female';
+            cloudOption.textContent = 'Cloud Voice (Online MP3) 🌐';
+            voiceSelect.appendChild(cloudOption);
+
+        } else {
+            hasNativeMalayalam = false;
+            warningNote.style.display = 'block';
+            engineTitle.innerText = "🌐 Cloud Voice Engine · ഓൺലൈൻ വഴി";
+            
+            let option = document.createElement('option');
+            option.value = 'online_female';
+            option.textContent = 'Malayalam Cloud Voice 🌐';
+            voiceSelect.appendChild(option);
+        }
+        
+        statusDiv.innerText = hasNativeMalayalam ? "✅ സിസ്റ്റം മലയാളം വോയിസ് തയ്യാറാണ്." : "ℹ️ ഓൺലൈൻ മലയാളം വോയിസ് മോഡ് സജീവമാക്കി.";
+    }
+
+    if (synthesis.onvoiceschanged !== undefined) {
+        synthesis.onvoiceschanged = populateVoiceList;
+    }
+    // Give browser a moment to load voices
+    setTimeout(populateVoiceList, 100);
+
+    rateSlider.addEventListener('input', () => {
+        rateVal.innerText = parseFloat(rateSlider.value).toFixed(2) + 'x';
+    });
+    pitchSlider.addEventListener('input', () => {
+        pitchVal.innerText = parseFloat(pitchSlider.value).toFixed(2);
+    });
+
+    function startRecordingAndSpeak() {
+        const text = textarea.value.trim();
+        if (!text) {
+            statusDiv.innerText = "⚠️ ദയവായി മലയാളത്തിൽ എന്തെങ്കിലും ടൈപ്പ് ചെയ്യുക!";
+            return;
+        }
+
+        if (synthesis.speaking) synthesis.cancel();
+        fallbackPlayer.pause();
+
+        const selectedMode = voiceSelect.value;
+
+        if (selectedMode && selectedMode.startsWith('native_')) {
+            // Native Browser TTS
+            const voiceName = selectedMode.replace('native_', '');
+            const voiceList = synthesis.getVoices();
+            let selectedVoice = voiceList.find(v => v.name === voiceName);
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ml-IN';
+            utterance.rate = parseFloat(rateSlider.value);
+            utterance.pitch = parseFloat(pitchSlider.value);
+            if (selectedVoice) utterance.voice = selectedVoice;
+            
+            statusDiv.innerText = "🔊 സംസാരിക്കുന്നു (Native)...";
+            utterance.onend = () => statusDiv.innerText = "✅ സംസാരം പൂർത്തിയായി.";
+            synthesis.speak(utterance);
+        } else {
+            // Online Fallback API via HTML element to prevent Auto-play block
+            statusDiv.innerText = "🌐 ഓൺലൈൻ ശബ്ദം തയ്യാറാക്കുന്നു...";
+            
+            // Limit characters for URL format (Google rejects very long text)
+            let shortText = text.length > 200 ? text.substring(0, 200) : text;
+            
+            const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ml&client=tw-ob&q=${encodeURIComponent(shortText)}`;
+            
+            fallbackPlayer.src = url;
+            fallbackPlayer.playbackRate = parseFloat(rateSlider.value);
+            
+            let playPromise = fallbackPlayer.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    statusDiv.innerText = "🔊 സംസാരിക്കുന്നു (Online)...";
+                }).catch(err => {
+                    console.error("Audio block error: ", err);
+                    statusDiv.innerHTML = `❌ ബ്രൗസർ തടഞ്ഞു. <a href="${url}" target="_blank" style="color: #b44332; font-weight: bold; text-decoration: underline;">ഇവിടെ ക്ലിക്ക് ചെയ്ത് കേൾക്കുക/ഡൗൺലോഡ് ചെയ്യുക 📥</a>`;
+                });
+            }
+
+            fallbackPlayer.onended = () => {
+                statusDiv.innerText = "✅ സംസാരം പൂർത്തിയായി.";
+            };
+        }
+    }
+
+    // Download Functionality
+    downloadBtn.addEventListener('click', () => {
+        const text = textarea.value.trim();
+        if (!text) {
+            statusDiv.innerText = "⚠️ ഡൗൺലോഡ് ചെയ്യാൻ മലയാളത്തിൽ എന്തെങ്കിലും ടൈപ്പ് ചെയ്യുക!";
+            return;
+        }
+
+        statusDiv.innerText = "⏳ ഡൗൺലോഡ് ലിങ്ക് തയ്യാറാക്കുന്നു...";
+        let shortText = text.length > 200 ? text.substring(0, 200) : text;
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ml&client=tw-ob&q=${encodeURIComponent(shortText)}`;
+        
+        window.open(url, '_blank');
+        statusDiv.innerText = "✅ പുതിയ ടാബിൽ തുറന്നു. 3 ഡോട്ടിൽ (⋮) ക്ലിക്ക് ചെയ്ത് Download ചെയ്യാം.";
+    });
+
+    speakRecordBtn.addEventListener('click', startRecordingAndSpeak);
+
+    stopBtn.addEventListener('click', () => {
+        if (synthesis.speaking) synthesis.cancel();
+        fallbackPlayer.pause();
+        statusDiv.innerText = "⏹️ സംസാരം നിർത്തി.";
+    });
+</script>
+</body>
+</html>
